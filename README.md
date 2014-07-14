@@ -1,3 +1,3 @@
-Marathon Airplane Design Week
+Marathon Airplane Design 
 --------------------------------
 
