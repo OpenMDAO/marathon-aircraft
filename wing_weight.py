@@ -52,4 +52,26 @@ class WingWeight(Component):
 		
 		self.W_tot = self.W_s + self.W_r + self.W_er + self.W_le + self.W_te + self.W_cover
 		
+class TailWeight(WingWeight):
+	q = Float(iotype="in", desc="manoeuvring speed dynamic pressure")
+	L_tailboom = Float(iotype="in", desc="length of tailboom")
+
+	W_tailboom = Float(iotype="out", desc="weight of tailboom", units="kg")
+	
+	def execute(self):
+	    self.N_er = 2*self.N_wing_panels
+		self.b = (self.AR*self.s)**0.5
+		self.delta = self.span/self.N_r/self.cbar
+		
+		self.W_s = (self.b*4.15-2 + self.b**2*3.91e-3)*(1.0+((self.q*self.s)/78.5-1.0)/2.0)
+        
+		self.W_r = self.N_r*(self.cbar**2*self.t_cbar*1.16e-1+self.cbar*4.01e-3)
+		slef.W_le = 0.174*(self.s**2*self.delta**(4/3)/self.b)
+		self.W_cover = self.s*1.93e-2
+		
+		self.W_tailboom = self.L_tailboom*1.14e-1+self.L_tailboom**2*1.96e-2)*(1.0+((self.q*self.s)/78.5-1.0)/2.0)
+		
+		self.W_tot = self.W_s + self.W_r + self.W_le + self.W_cover +self.W_tailboom
+
+		
 	
