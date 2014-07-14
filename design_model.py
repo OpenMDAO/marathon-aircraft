@@ -16,7 +16,7 @@ class MarathonAirplane(Assembly):
 
 
     def configure(self): 
-        data_path = os.path.join('results', 'data_%s'%strftime('%Y-%m-%d_%H.%M.%S'))
+        data_path = os.path.join('results', 'data_%s.json'%strftime('%Y-%m-%d_%H.%M.%S'))
 
         self.recorders = [BSONCaseRecorder(data_path), ]
 
