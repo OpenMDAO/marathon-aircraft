@@ -16,7 +16,7 @@ class WingWeight(Component):
     V_gust = Float(2.8, units="m/s", iotype="in", desc="design wind gust speeds")
 
     N_wing_sections = Int(iotype="in", desc="number of individual wing section")
-    t_cbar = Float(.15, iotype="in", desc="average t/c")
+    t_cbar = Float(.13, iotype="in", desc="average t/c")
     
     #outputs
     cbar = Float(iotype="out", desc="average chord", units="m")
@@ -47,11 +47,11 @@ class WingWeight(Component):
         self.delta = self.b/self.N_r/self.cbar
         
         # Cantilevered
-        self.M_s = (self.b*1.17e-1 + self.b**2*1.10e-2)*(1.0+(self.n_ult*GM_guess/100.0-2.0)/4.0)
+        #self.M_s = (self.b*1.17e-1 + self.b**2*1.10e-2)*(1.0+(self.n_ult*GM_guess/100.0-2.0)/4.0)
         # One wire
         #self.M_s = (self.b*3.10e-2 + self.b**2*7.56e-3)*(1.0+(self.n_ult*GM_guess/100.0-2.0)/4.0)
         # two wire
-        #self.M_s = (self.b*1.35e-1 + self.b**2*1.68e-3)*(1.0+(self.n_ult*GM_guess/100.0-2.0)/4.0)
+        self.M_s = (self.b*1.35e-1 + self.b**2*1.68e-3)*(1.0+(self.n_ult*GM_guess/100.0-2.0)/4.0)
         
         self.M_r = self.N_r*(self.cbar**2*self.t_cbar*5.50e-2+self.cbar*1.91e-3)
         self.M_er = self.N_er*(self.cbar**2*self.t_cbar*6.62e-1+self.cbar*6.57e-3)

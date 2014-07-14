@@ -1,6 +1,11 @@
+import os
+from time import strftime
+
 from openmdao.main.api import Assembly, Component
 
 from openmdao.lib.drivers.api import NewtonSolver
+
+from openmdao.lib.casehandlers.api import BSONCaseRecorder
 
 
 from weights import WingWeight, FuseWeight
@@ -11,6 +16,9 @@ class MarathonAirplane(Assembly):
 
 
     def configure(self): 
+        data_path = os.path.join('results', 'data_%s'%strftime('%Y-%m-%d_%H.%M.%S'))
+
+        self.recorders = [BSONCaseRecorder(data_path), ]
 
         self.add('wing_weight', WingWeight())
         self.add('fuse_weight', FuseWeight())
@@ -38,8 +46,9 @@ class MarathonAirplane(Assembly):
         self.connect('wing_weight.AR', ['level.AR', 'turning.AR'])
 
 
-        self.wing_weight.s = 90
-        self.wing_weight.AR = 40
+        self.wing_weight.s = 30
+        self.wing_weight.AR = 30
+        self.wing_weight.t_cbar = .13
         self.fuse_weight.s = 6 #tail
         self.fuse_weight.AR = 10 #tail
         self.level.alpha = 1
@@ -70,16 +79,16 @@ if __name__ == "__main__":
 
     #ma.driver.run_iteration()
 
-    print ma.wing_weight.GW_guess - (ma.wing_weight.W_tot + ma.fuse_weight.W_tot)
-    print ma.level.lift, (ma.wing_weight.W_tot + ma.fuse_weight.W_tot), ma.level.lift - (ma.wing_weight.W_tot + ma.fuse_weight.W_tot)
-    print ma.turning.lift, ma.turning.lift - (ma.turning.load_factor * (ma.wing_weight.W_tot + ma.fuse_weight.W_tot))
+    #print ma.wing_weight.GW_guess - (ma.wing_weight.W_tot + ma.fuse_weight.W_tot)
+    #print ma.level.lift, (ma.wing_weight.W_tot + ma.fuse_weight.W_tot), ma.level.lift - (ma.wing_weight.W_tot + ma.fuse_weight.W_tot)
+    #print ma.turning.lift, ma.turning.lift - (ma.turning.load_factor * (ma.wing_weight.W_tot + ma.fuse_weight.W_tot))
 
     #exit()
 
     print "Gross Weight: ", (ma.wing_weight.W_tot + ma.fuse_weight.W_tot)/9.81
-    print "Empty Weight: ", (ma.wing_weight.W_tot + ma.fuse_weight.W_tot)/9.81 - 
     print "level.drag:", ma.level.drag
     print "level.alpha:", ma.level.alpha
     print "turning.drag:", ma.turning.drag
-    print "power req:", ma.level.drag*ma.level.V*1.1
+    print "power req per pilot:", (ma.level.drag*ma.level.V*1.1)/3.0
     print "watts/kg:", ma.level.drag*ma.level.V*1.1/(3*72)
+    print "wing average chord:", ma.wing_weight.cbar
