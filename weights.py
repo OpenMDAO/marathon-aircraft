@@ -100,5 +100,34 @@ class FuseWeight(WingWeight):
                      self.M_pilots + self.N_pod*self.M_pod  + self.N_propellor*self.M_propellor)
 
 
-        
+if __name__ == "__main__": 
+    import numpy as np
+    from matplotlib import pyplot as plt
+
+    p_wing = 10
+    w_pc = 20
+    l1 = 30
+    l2 = 30
+
+    c3 = -3*l2**2/2.0
+    c2 = -l1/2.0 *(p_wing*l1+w_pc)-c3
+
+    def m1(y): 
+        return p_wing/2. * y**2 + w_pc/2*y + c2
+
+    def m2(y): 
+        return p_wing*(y**2/2.0 + l2*y + c3)
+
+    Y = np.linspace(0,l1,50)
+    M = m1(Y)
+    plt.plot(Y,M)
+
+    Y = np.linspace(0,l1,50)
+    M = m2(Y)
+    plt.plot(l1+Y,M)
+
+    plt.show()
+    #y = 0 -> l1
+    #y = 0 -> l2
+
     
