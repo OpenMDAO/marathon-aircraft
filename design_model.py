@@ -61,7 +61,8 @@ class MarathonAirplane(Assembly):
         driver.add_parameter('wing_weight.s', low=20, high=150)
         driver.add_parameter('wing_weight.AR', low=5, high=50)
         driver.add_objective('level.drag')
-        driver.add_constraint('level.alpha < 12')
+        #driver.add_constraint('level.alpha < 12')
+        driver.add_constraint('level.Cl < 1.1')
         solver = self.add('solver', NewtonSolver())
 
         #state variables
