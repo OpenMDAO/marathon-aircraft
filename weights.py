@@ -104,25 +104,35 @@ if __name__ == "__main__":
     import numpy as np
     from matplotlib import pyplot as plt
 
-    p_wing = 10
-    w_pc = 20
+    w_pc = 70*9.81
+    w_ps = 70*9.81
     l1 = 30
     l2 = 30
+    p_wing = (w_pc/2 + w_ps)/(l1+l2)
+    rho = 2700
+    t = 0.7*0.14
+    sig_max = 1e12
 
-    c3 = -3*l2**2/2.0
-    c2 = -l1/2.0 *(p_wing*l1+w_pc)-c3
+    c3 = -l2**2/2.0*p_wing
+    c2 = -l1/2.0 *(-p_wing*l1+w_pc)+c3
 
     def m1(y): 
-        return p_wing/2. * y**2 + w_pc/2*y + c2
+        return -p_wing/2. * y**2 + w_pc/2*y + c2
 
     def m2(y): 
-        return p_wing*(y**2/2.0 + l2*y + c3)
-
+        return p_wing*(y**2/2.0 + l2*y) + c3
+	
+	def wingmass1(y):
+		return 2*sig_max*t*rho/m1(y)
+		
+	def wingmass2(y):
+		return 2*sig_max*t*rho/m2(y)
+	
     Y = np.linspace(0,l1,50)
     M = m1(Y)
     plt.plot(Y,M)
 
-    Y = np.linspace(0,l1,50)
+    Y = np.linspace(0,l2,50)
     M = m2(Y)
     plt.plot(l1+Y,M)
 
