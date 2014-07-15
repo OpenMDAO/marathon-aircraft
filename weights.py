@@ -57,10 +57,12 @@ class WingWeight(Component):
         #self.M_le = 0.456*(self.s**2*self.delta**(4/3)/self.b)
         #self.M_te = self.b*2.77e-2
 		
-		# muscular skin estimate with DAE11 airfoil
+		# Muscular skin estimate with DAE11 airfoil
         self.M_cover = self.s*2.061*0.212 # muscular skin estimate with DAE11 airfoil
+		self.M_shearweb = self.b*self.t*0.550
+		
         
-        self.M_tot = (self.M_s + self.M_r + self.M_er + self.M_le + self.M_te + self.M_cover)
+        self.M_tot = (self.M_s + self.M_r + self.M_er + self.M_cover + self.M_shearweb)
 
 
 class FuseWeight(WingWeight):
