@@ -8,7 +8,7 @@ from openmdao.lib.datatypes.api import Float, Int
 
 class WingWeight(Component): 
 
-    GM_guess = Float(30, iotype="in", units="kg", desc="gross weight guess")
+    #GM_guess = Float(30, iotype="in", units="kg", desc="gross weight guess")
 
     s = Float(90, units="m**2", iotype="in", desc="wing area")
     AR = Float(20, units="unitless", iotype="in", desc="aspect ratio")
@@ -19,8 +19,12 @@ class WingWeight(Component):
     N_wing_sections = Int(iotype="in", desc="number of individual wing section")
     t_cbar = Float(.13, iotype="in", desc="average t/c")
     
+    M_pod = Float(72.4+8.164, iotype="in", desc="weight of each pilot pod", units="kg") 
+    y_pod = Float(10, iotype="in", desc="weight of each pilot pod", units="m") 
+
     #outputs
     cbar = Float(iotype="out", desc="average chord", units="m")
+    tbar = Float(iotype="out", desc="average thickness", units="m")
     n_ult = Float(iotype="out", desc="ultimate load factor")
     N_r = Int(iotype="out", desc="number of ribs")
     N_er = Int (iotype="out", desc="number of end ribs")
@@ -35,8 +39,6 @@ class WingWeight(Component):
 
     M_tot = Float(iotype="out", desc="total combined wing weight", units="kg")
 
-
-
     def execute(self): 
 
         self.n_ult = (self.V_flight+self.V_gust)**2/self.V_flight**2
@@ -44,6 +46,7 @@ class WingWeight(Component):
         self.N_er = 2*self.N_wing_sections
         self.b = (self.AR*self.s)**0.5
         self.cbar = self.s/self.b
+        self.tbar = self.t_cbar*self.cbar
         self.N_r = int(np.floor(self.b*3.28)) # 1 every foot
         self.delta = self.b/self.N_r/self.cbar
         
@@ -54,27 +57,32 @@ class WingWeight(Component):
         # two wire
         #self.M_s = (self.b*1.35e-1 + self.b**2*1.68e-3)*(1.0+(self.n_ult*self.GM_guess/100.0-2.0)/4.0)
 
-        w_pc = 70*9.81
-        w_ps = 70*9.81
-        l1 = 30
-        l2 = 30
-        p_wing = (w_pc/2 + w_ps)/(l1+l2)
-        rho = 2700
+        w_pc = self.M_pod*9.81
+        w_ps = self.M_pod*9.81
+
+        l2 = self.b /2 - self.y_pod
+
+        p_wing = (w_pc/2 + w_ps)/(self.y_pod+l2)
+        rho = 1580.6 #NCT301,HS40 carbon
         t = 0.7*0.14
-        sig_max = 1e12
+        sig_max = 1.0204e9/2 #NCT301,HS40 carbon with FOS of 2
 
-        def m1(y): 
-            return -p_wing/2. * y**2 + w_pc/2*y + c2
+        c3 = -l2**2/2.0*p_wing
+        c2 = -self.y_pod/2.0 *(-p_wing*self.y_pod+w_pc)+c3
 
-        def m2(y): 
-            return p_wing*(y**2/2.0 + l2*y) + c3
+        # def m1(y): 
+        #     return -p_wing/2. * y**2 + w_pc/2*y + c2
+
+        # def m2(y): 
+        #     return p_wing*(-y**2/2.0 + l2*y) + c3
         
-        #0->l1
-        def wingmass1(y):
-            return 2*sig_max*t*rho/m1(y)
-        #0->l1    
-        def wingmass2(y):
-            return 2*sig_max*t*rho/m2(y)
+        def m1int(y):
+            return -p_wing/6. * y**3 + w_pc/4*y**2 + c2*y
+            
+        def m2int(y):
+            return p_wing*(-y**3/6 + l2*y**2/2) + c3*y
+
+        self.M_s = 2*rho/(t*sig_max)*(np.abs(m1int(self.y_pod)-m1int(0))+np.abs(m2int(l2)-m2int(0)))
         
         self.M_r = self.N_r*(self.cbar**2*self.t_cbar*5.50e-2+self.cbar*1.91e-3)
         self.M_er = self.N_er*(self.cbar**2*self.t_cbar*6.62e-1+self.cbar*6.57e-3)
@@ -125,46 +133,6 @@ class FuseWeight(WingWeight):
                      self.M_pilots + self.N_pod*self.M_pod  + self.N_propellor*self.M_propellor)
 
 
-if __name__ == "__main__": 
-    import numpy as np
-    from matplotlib import pyplot as plt
-
-    w_pc = 70*9.81
-    w_ps = 70*9.81
-    l1 = 30
-    l2 = 30
-    p_wing = (w_pc/2 + w_ps)/(l1+l2)
-    rho = 1580.6 #NCT301,HS40 carbon
-    t = 0.7*0.14
-    sig_max = 1.0204e9/2 #NCT301,HS40 carbon with FOS of 2
-
-    c3 = -l2**2/2.0*p_wing
-    c2 = -l1/2.0 *(-p_wing*l1+w_pc)+c3
-
-    def m1(y): 
-        return -p_wing/2. * y**2 + w_pc/2*y + c2
-
-    def m2(y): 
-        return p_wing*(-y**2/2.0 + l2*y) + c3
-	
-    def m1int(y):
-        return -p_wing/6. * y**3 + w_pc/4*y**2 + c2*y
-		
-	def m2int(y):
-	    return p_wing*(-y**3/6 + l2*y**2/2) + c3*y
-
-	sparmass = 2*rho/(t*sig_max)*(m1int(l1)-m1int(0)+m2int(l2)-m2int(0))
-		
-    Y = np.linspace(0,l1,50)
-    M = m1(Y)
-    plt.plot(Y,M)
-
-    Y = np.linspace(0,l2,50)
-    M = m2(Y)
-    plt.plot(l1+Y,M)
-
-    plt.show()
-    #y = 0 -> l1
-    #y = 0 -> l2
+    
 
     

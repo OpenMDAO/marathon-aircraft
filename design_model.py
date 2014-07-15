@@ -39,7 +39,8 @@ class MarathonAirplane(Assembly):
         #Global Variables
         self.connect('level.Cd_a', 'turning.Cd_a')
         self.connect('fuse_weight.rho', ['level.rho', 'turning.rho']) #air density 
-        self.connect('wing_weight.V_flight', ['fuse_weight.V_flight','level.V', 'turning.V']) #flight speed
+        self.connect('fuse_weight.V_flight', ['wing_weight.V_flight','level.V', 'turning.V']) #flight speed
+        self.connect('fuse_weight.M_tot', 'wing_weight.M_pod')
 
         #design Variables: 
         self.connect('wing_weight.s', ['level.s', 'turning.s'])
@@ -59,23 +60,21 @@ class MarathonAirplane(Assembly):
 
         driver = self.add('driver', COBYLAdriver())
         driver.add_parameter('wing_weight.s', low=20, high=150)
-        driver.add_parameter('wing_weight.AR', low=5, high=200)
+        driver.add_parameter('wing_weight.AR', low=5, high=50)
         driver.add_objective('level.drag')
-<<<<<<< HEAD
-        driver.add_constraint('level.alpha < 10')
-=======
-        driver.add_constraint('level.alpha < 12')
->>>>>>> 2510ecb4877b558a2ffdc3dea2c0caa2e524f710
+        driver.add_constraint('level.Cl < 1.1')
         solver = self.add('solver', NewtonSolver())
 
+        solver = self.add('driver', NewtonSolver())
+
         #state variables
-        solver.add_parameter('wing_weight.GM_guess', low=50, high=100)
+        #solver.add_parameter('wing_weight.GM_guess', low=50, high=100)
         solver.add_parameter('level.alpha', low=0, high=5, start=3)
         solver.add_parameter('turning.alpha', low=0, high=10, start=3)
         #solver.add_parameter('wing_weight.s', low=30, high=110)
 
         #compatibility constraints
-        solver.add_constraint('(wing_weight.GM_guess - wing_weight.M_tot - fuse_weight.M_tot)/100 = 0')
+        #solver.add_constraint('(wing_weight.GM_guess - wing_weight.M_tot - fuse_weight.M_tot)/100 = 0')
         solver.add_constraint('(level.lift/9.81 - (wing_weight.M_tot + fuse_weight.M_tot))/2500 = 0 ')
         solver.add_constraint('(turning.lift/9.81 - (turning.load_factor * (wing_weight.M_tot + fuse_weight.M_tot)))/1200 = 0')
         #solver.add_constraint('(wing_weight.s/(wing_weight.M_tot + fuse_weight.M_tot) - .27)/.3 = 0')
@@ -99,23 +98,22 @@ if __name__ == "__main__":
     # for v in np.linspace(6,16,30): 
     #     ma.fuse_weight.N_pilot = 3
     #     ma.fuse_weight.N_propellor = 3
-    #     ma.wing_weight.V_flight = v
+    #     ma.fuse_weight.V_flight = v
     #     ma.run()
 
-    #     print repr([ma.wing_weight.V_flight, ma.wing_weight.s, ma.wing_weight.M_tot, ma.fuse_weight.M_tot, ma.fuse_weight.M_pilots, ma.wing_weight.s, (ma.level.drag*ma.level.V*1.1), ma.level.drag*ma.level.V*1.1/(3*72)]), ","
+    
+    ma.wing_weight.s = 32
+    ma.level.alpha = 9
 
-    for i in range(1,6):
-        ma.wing_weight.s = 50
-        ma.level.alpha = 9
-        ma.fuse_weight.N_pilot = i
-        ma.fuse_weight.N_propellor = 1
-        ma.run()
+    ma.fuse_weight.N_pilot = 3
+    ma.fuse_weight.N_propellor = 3
+    ma.run()
 
-<<<<<<< HEAD
-    print repr([ma.wing_weight.s, ma.wing_weight.AR, ma.wing_weight.b, ma.wing_weight.M_tot, ma.fuse_weight.M_tot, ma.fuse_weight.M_pilots, ma.wing_weight.s, (ma.level.drag*ma.level.V*1.1), ma.level.drag*ma.level.V*1.1/(3*72)]), ","
-=======
-        print repr([ma.wing_weight.s, ma.wing_weight.AR, ma.wing_weight.b, ma.level.alpha, (ma.level.drag*ma.level.V*1.1)/ma.fuse_weight.N_pilot, ma.level.drag*ma.level.V*1.1/(ma.fuse_weight.N_pilot*72)]), ","
->>>>>>> 2510ecb4877b558a2ffdc3dea2c0caa2e524f710
+    for ar in np.linspace(30,100,50): 
+        ma.wing_weight.AR = ar
+
+
+    #print repr([ma.wing_weight.s, ma.wing_weight.AR, ma.wing_weight.b, ma.wing_weight.tbar, (ma.level.drag*ma.level.V*1.2)/ma.fuse_weight.N_pilot, ma.level.drag*ma.level.V*1.2/(ma.fuse_weight.N_pilot*72)]), ","
 
 
 
