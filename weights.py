@@ -51,11 +51,14 @@ class WingWeight(Component):
         # two wire
         self.M_s = (self.b*1.35e-1 + self.b**2*1.68e-3)*(1.0+(self.n_ult*self.GM_guess/100.0-2.0)/4.0)
         
-        self.M_r = self.N_r*(self.cbar**2*self.t_cbar*5.50e-2+self.cbar*1.91e-3)
+        # Deadalus estimates
+		self.M_r = self.N_r*(self.cbar**2*self.t_cbar*5.50e-2+self.cbar*1.91e-3)
         self.M_er = self.N_er*(self.cbar**2*self.t_cbar*6.62e-1+self.cbar*6.57e-3)
-        self.M_le = 0.456*(self.s**2*self.delta**(4/3)/self.b)
-        self.M_te = self.b*2.77e-2
-        self.M_cover = self.s*3.08e-2
+        #self.M_le = 0.456*(self.s**2*self.delta**(4/3)/self.b)
+        #self.M_te = self.b*2.77e-2
+		
+		# muscular skin estimate with DAE11 airfoil
+        self.M_cover = self.s*2.061*0.212 # muscular skin estimate with DAE11 airfoil
         
         self.M_tot = (self.M_s + self.M_r + self.M_er + self.M_le + self.M_te + self.M_cover)
 
