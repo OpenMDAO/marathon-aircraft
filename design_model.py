@@ -1,9 +1,10 @@
 import os
 from time import strftime
+import numpy as np 
 
 from openmdao.main.api import Assembly, Component
 
-from openmdao.lib.drivers.api import NewtonSolver
+from openmdao.lib.drivers.api import SLSQPdriver, NewtonSolver
 
 from openmdao.lib.casehandlers.api import BSONCaseRecorder
 
@@ -25,6 +26,7 @@ class MarathonAirplane(Assembly):
         self.level.Cd_a = 3*.015
 
         self.add('turning', Aero())
+        self.level.Cd_a = 6*.015
         self.turning.R_0 = 92 #turning radius
 
 
@@ -44,49 +46,69 @@ class MarathonAirplane(Assembly):
         self.connect('wing_weight.AR', ['level.AR', 'turning.AR'])
 
 
-        self.wing_weight.s = 30
+        self.wing_weight.s = 100
         self.wing_weight.AR = 30
         self.wing_weight.t_cbar = .13
         self.fuse_weight.s = 6 #tail
         self.fuse_weight.AR = 10 #tail
         self.level.alpha = 1
         self.turning.alpha = 3
-        self.fuse_weight.N_pilot = 1
-        self.fuse_weight.N_propellor = 1
+        self.fuse_weight.N_pilot = 3
+        self.fuse_weight.N_propellor = 3
 
 
-        self.add('driver', NewtonSolver())
+        driver = self.add('driver', SLSQPdriver())
+        driver.add_parameter('wing_weight.s', low=20, high=150)
+        driver.add_parameter('wing_weight.AR', low=5, high=50)
+        driver.add_objective('level.drag')
+        #solver = self.add('solver', NewtonSolver())
 
         #state variables
-        self.driver.add_parameter('wing_weight.GM_guess', low=50, high=100)
-        self.driver.add_parameter('level.alpha', low=0, high=10, start=3)
-        self.driver.add_parameter('turning.alpha', low=0, high=10, start=3)
+        solver.add_parameter('wing_weight.GM_guess', low=50, high=100)
+        solver.add_parameter('level.alpha', low=0, high=5, start=3)
+        solver.add_parameter('turning.alpha', low=0, high=10, start=3)
+        #solver.add_parameter('wing_weight.s', low=30, high=110)
 
         #compatibility constraints
-        self.driver.add_constraint('(wing_weight.GM_guess - wing_weight.M_tot - fuse_weight.M_tot)/100 = 0')
-        self.driver.add_constraint('(level.lift/9.81 - (wing_weight.M_tot + fuse_weight.M_tot))/2500 = 0 ')
-        self.driver.add_constraint('(turning.lift/9.81 - (turning.load_factor * (wing_weight.M_tot + fuse_weight.M_tot)))/1200 = 0')
+        solver.add_constraint('(wing_weight.GM_guess - wing_weight.M_tot - fuse_weight.M_tot)/100 = 0')
+        solver.add_constraint('(level.lift/9.81 - (wing_weight.M_tot + fuse_weight.M_tot))/2500 = 0 ')
+        solver.add_constraint('(turning.lift/9.81 - (turning.load_factor * (wing_weight.M_tot + fuse_weight.M_tot)))/1200 = 0')
+        #solver.add_constraint('(wing_weight.s/(wing_weight.M_tot + fuse_weight.M_tot) - .27)/.3 = 0')
 
-        self.driver.workflow.add(['wing_weight','fuse_weight','level','turning'])
+        #driver.workflow.add('solver')
+        #solver.workflow.add(['wing_weight','fuse_weight','level','turning'])
 
         #data_path = os.path.join('dw_day1', 'data_%s.bson'%strftime('%Y-%m-%d_%H.%M.%S'))
-        data_path = os.path.join('dw_day1', '%d_pilot.bson'%self.fuse_weight.N_pilot)
+        data_path = os.path.join('dw_day1', 'pilot_study.bson')
         self.recorders = [BSONCaseRecorder(data_path), ]
 
 if __name__ == "__main__": 
 
     ma = MarathonAirplane()
 
-    
+    # for v in np.linspace(6,16,30): 
+    #     ma.fuse_weight.N_pilot = 3
+    #     ma.fuse_weight.N_propellor = 3
+    #     ma.wing_weight.V_flight = v
+    #     ma.run()
+
+    #     print repr([ma.wing_weight.V_flight, ma.wing_weight.s, ma.wing_weight.M_tot, ma.fuse_weight.M_tot, ma.fuse_weight.M_pilots, ma.wing_weight.s, (ma.level.drag*ma.level.V*1.1), ma.level.drag*ma.level.V*1.1/(3*72)]), ","
+
+    ma.fuse_weight.N_pilot = 3
+    ma.fuse_weight.N_propellor = 3
     ma.run()
+
+    print repr([ma.wing_weight.s, ma.wing_weight.AR, ma.wing_weight.M_tot, ma.fuse_weight.M_tot, ma.fuse_weight.M_pilots, ma.wing_weight.s, (ma.level.drag*ma.level.V*1.1), ma.level.drag*ma.level.V*1.1/(3*72)]), ","
+
+
 
     #ma.driver.run_iteration()
 
     #print ma.wing_weight.GM_guess - (ma.wing_weight.M_tot + ma.fuse_weight.M_tot)
     #print ma.level.lift, (ma.wing_weight.W_tot + ma.fuse_weight.W_tot), ma.level.lift - (ma.wing_weight.W_tot + ma.fuse_weight.W_tot)
     #print ma.turning.lift, ma.turning.lift - (ma.turning.load_factor * (ma.wing_weight.W_tot + ma.fuse_weight.W_tot))
-
-    #exit()
+    # print ma.wing_weight.s/(ma.wing_weight.M_tot + ma.fuse_weight.M_tot)
+    # exit()
 
     print "Gross Mass: ", (ma.wing_weight.M_tot + ma.fuse_weight.M_tot)
     print "level.drag:", ma.level.drag
