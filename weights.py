@@ -7,7 +7,7 @@ from openmdao.lib.datatypes.api import Float, Int
 
 class WingWeight(Component): 
 
-    GW_guess = Float(20, iotype="in", units="kg", desc="gross weight guess")
+    GM_guess = Float(30, iotype="in", units="kg", desc="gross weight guess")
 
     s = Float(90, units="m**2", iotype="in", desc="wing area")
     AR = Float(20, units="unitless", iotype="in", desc="aspect ratio")
@@ -30,13 +30,11 @@ class WingWeight(Component):
     M_er = Float(iotype="out", desc="weight of end-ribs", units="kg")
     M_le = Float(iotype="out", desc="weight of the leading edge", units="kg")
     M_te = Float(iotype="out", desc="weight of the trailing edge", units="kg")
-    M_cover = Float(iotype="out", desc="weight of surface covering", units="kg")
+    M_cover = Float(iotype="out", desc="weight of surface covering for control surfaces", units="kg")
 
-    W_tot = Float(iotype="out", desc="total combined wing weight", units="N")
+    M_tot = Float(iotype="out", desc="total combined wing weight", units="kg")
 
     def execute(self): 
-
-        GM_guess = self.GW_guess/9.81 
 
         self.n_ult = (self.V_flight+self.V_gust)**2/self.V_flight**2
 
@@ -47,11 +45,11 @@ class WingWeight(Component):
         self.delta = self.b/self.N_r/self.cbar
         
         # Cantilevered
-        #self.M_s = (self.b*1.17e-1 + self.b**2*1.10e-2)*(1.0+(self.n_ult*GM_guess/100.0-2.0)/4.0)
+        self.M_s = (self.b*1.17e-1 + self.b**2*1.10e-2)*(1.0+(self.n_ult*self.GM_guess/100.0-2.0)/4.0)
         # One wire
-        #self.M_s = (self.b*3.10e-2 + self.b**2*7.56e-3)*(1.0+(self.n_ult*GM_guess/100.0-2.0)/4.0)
+        #self.M_s = (self.b*3.10e-2 + self.b**2*7.56e-3)*(1.0+(self.n_ult*self.GM_guess/100.0-2.0)/4.0)
         # two wire
-        self.M_s = (self.b*1.35e-1 + self.b**2*1.68e-3)*(1.0+(self.n_ult*GM_guess/100.0-2.0)/4.0)
+        #self.M_s = (self.b*1.35e-1 + self.b**2*1.68e-3)*(1.0+(self.n_ult*self.GM_guess/100.0-2.0)/4.0)
         
         self.M_r = self.N_r*(self.cbar**2*self.t_cbar*5.50e-2+self.cbar*1.91e-3)
         self.M_er = self.N_er*(self.cbar**2*self.t_cbar*6.62e-1+self.cbar*6.57e-3)
@@ -59,8 +57,9 @@ class WingWeight(Component):
         self.M_te = self.b*2.77e-2
         self.M_cover = self.s*3.08e-2
         
-        self.W_tot = 9.81 * (self.M_s + self.M_r + self.M_er + self.M_le + self.M_te + self.M_cover)
-        
+        self.M_tot = (self.M_s + self.M_r + self.M_er + self.M_le + self.M_te + self.M_cover)
+
+
 class FuseWeight(WingWeight):
 
     V_flight = Float(11.72, units="m/s", iotype="in", desc="design flight speed")
@@ -75,7 +74,7 @@ class FuseWeight(WingWeight):
 
     M_pilot = Float(72.4+8.164, iotype="in", desc="weight per pilot") #8.164 kg of stuff per pilot
     M_propellor  = Float(2.512, iotype="in", desc="weight per propellor")
-    M_pod  = Float(6.878, iotype="in", desc="weight per pilot pod")
+    M_pod  = Float(3.499, iotype="in", desc="weight per pilot pod")
 
     q_max = Float(iotype="out", desc="manoeuvring speed dynamic pressure")
     M_tailboom = Float(iotype="out", desc="weight of tailboom", units="kg")
@@ -89,17 +88,16 @@ class FuseWeight(WingWeight):
         self.N_r = int(np.floor(self.b*3.28)) # 1 every foot
         self.delta = self.b/self.N_r/self.cbar
 
-        self.M_s = (self.b*4.15-2 + self.b**2*3.91e-3)*(1.0+((self.q_max*self.s)/78.5-1.0)/2.0)
+        self.M_s = (self.b*4.15e-2 + self.b**2*3.91e-3)*(1.0+((self.q_max*self.s)/78.5-1.0)/2.0)
         
         self.M_r = self.N_r*(self.cbar**2*self.t_cbar*1.16e-1+self.cbar*4.01e-3)
         self.M_le = 0.174*(self.s**2*self.delta**(4/3)/self.b)
         self.M_cover = self.s*1.93e-2
         
         self.M_tailboom = (self.L_tailboom*1.14e-1+self.L_tailboom**2*1.96e-2)*(1.0+((self.q_max*self.s)/78.5-1.0)/2.0)
-        
-        self.W_tot = 9.81 * (self.M_s + self.M_r + self.M_le + self.M_cover + self.M_tailboom + \
-                     self.N_pilot*self.M_pilot + self.N_pod*self.M_pod  + self.N_propellor*self.M_propellor)
-
+        self.M_pilots = self.N_pilot*self.M_pilot
+        self.M_tot = (self.M_s + self.M_r + self.M_le + self.M_cover + self.M_tailboom + \
+                     self.M_pilots + self.N_pod*self.M_pod  + self.N_propellor*self.M_propellor)
 
 
         

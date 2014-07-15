@@ -16,9 +16,7 @@ class MarathonAirplane(Assembly):
 
 
     def configure(self): 
-        data_path = os.path.join('results', 'data_%s.json'%strftime('%Y-%m-%d_%H.%M.%S'))
-
-        self.recorders = [BSONCaseRecorder(data_path), ]
+        
 
         self.add('wing_weight', WingWeight())
         self.add('fuse_weight', FuseWeight())
@@ -53,39 +51,44 @@ class MarathonAirplane(Assembly):
         self.fuse_weight.AR = 10 #tail
         self.level.alpha = 1
         self.turning.alpha = 3
+        self.fuse_weight.N_pilot = 1
+        self.fuse_weight.N_propellor = 1
 
 
         self.add('driver', NewtonSolver())
 
         #state variables
-        self.driver.add_parameter('wing_weight.GW_guess', low=50, high=100, start=60)
+        self.driver.add_parameter('wing_weight.GM_guess', low=50, high=100)
         self.driver.add_parameter('level.alpha', low=0, high=10, start=3)
         self.driver.add_parameter('turning.alpha', low=0, high=10, start=3)
 
         #compatibility constraints
-        self.driver.add_constraint('(wing_weight.GW_guess - wing_weight.W_tot - fuse_weight.W_tot)/3500 = 0')
-        self.driver.add_constraint('(level.lift - (wing_weight.W_tot + fuse_weight.W_tot))/2500 = 0 ')
-        self.driver.add_constraint('(turning.lift - (turning.load_factor * (wing_weight.W_tot + fuse_weight.W_tot)))/1200 = 0')
+        self.driver.add_constraint('(wing_weight.GM_guess - wing_weight.M_tot - fuse_weight.M_tot)/100 = 0')
+        self.driver.add_constraint('(level.lift/9.81 - (wing_weight.M_tot + fuse_weight.M_tot))/2500 = 0 ')
+        self.driver.add_constraint('(turning.lift/9.81 - (turning.load_factor * (wing_weight.M_tot + fuse_weight.M_tot)))/1200 = 0')
 
         self.driver.workflow.add(['wing_weight','fuse_weight','level','turning'])
 
-        
+        #data_path = os.path.join('dw_day1', 'data_%s.bson'%strftime('%Y-%m-%d_%H.%M.%S'))
+        data_path = os.path.join('dw_day1', '%d_pilot.bson'%self.fuse_weight.N_pilot)
+        self.recorders = [BSONCaseRecorder(data_path), ]
 
 if __name__ == "__main__": 
 
     ma = MarathonAirplane()
 
+    
     ma.run()
 
     #ma.driver.run_iteration()
 
-    #print ma.wing_weight.GW_guess - (ma.wing_weight.W_tot + ma.fuse_weight.W_tot)
+    #print ma.wing_weight.GM_guess - (ma.wing_weight.M_tot + ma.fuse_weight.M_tot)
     #print ma.level.lift, (ma.wing_weight.W_tot + ma.fuse_weight.W_tot), ma.level.lift - (ma.wing_weight.W_tot + ma.fuse_weight.W_tot)
     #print ma.turning.lift, ma.turning.lift - (ma.turning.load_factor * (ma.wing_weight.W_tot + ma.fuse_weight.W_tot))
 
     #exit()
 
-    print "Gross Weight: ", (ma.wing_weight.W_tot + ma.fuse_weight.W_tot)/9.81
+    print "Gross Mass: ", (ma.wing_weight.M_tot + ma.fuse_weight.M_tot)
     print "level.drag:", ma.level.drag
     print "level.alpha:", ma.level.alpha
     print "turning.drag:", ma.turning.drag
