@@ -36,7 +36,6 @@ class Aero(Component):
 
     def execute(self): 
 
-
         self.Cl = 2*pi*self.alpha*pi/180.
         self.Cd = Cd_interp(self.Cl)
 
