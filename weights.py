@@ -134,9 +134,9 @@ if __name__ == "__main__":
     l1 = 30
     l2 = 30
     p_wing = (w_pc/2 + w_ps)/(l1+l2)
-    rho = 2700
+    rho = 1580.6 #NCT301,HS40 carbon
     t = 0.7*0.14
-    sig_max = 1e12
+    sig_max = 1.0204e9/2 #NCT301,HS40 carbon with FOS of 2
 
     c3 = -l2**2/2.0*p_wing
     c2 = -l1/2.0 *(-p_wing*l1+w_pc)+c3
@@ -145,14 +145,16 @@ if __name__ == "__main__":
         return -p_wing/2. * y**2 + w_pc/2*y + c2
 
     def m2(y): 
-        return p_wing*(y**2/2.0 + l2*y) + c3
+        return p_wing*(-y**2/2.0 + l2*y) + c3
 	
-	def wingmass1(y):
-		return 2*sig_max*t*rho/m1(y)
+    def m1int(y):
+        return -p_wing/6. * y**3 + w_pc/4*y**2 + c2*y
 		
-	def wingmass2(y):
-		return 2*sig_max*t*rho/m2(y)
-	
+	def m2int(y):
+	    return p_wing*(-y**3/6 + l2*y**2/2) + c3*y
+
+	sparmass = 2*rho/(t*sig_max)*(m1int(l1)-m1int(0)+m2int(l2)-m2int(0))
+		
     Y = np.linspace(0,l1,50)
     M = m1(Y)
     plt.plot(Y,M)
