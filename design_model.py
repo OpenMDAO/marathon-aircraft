@@ -61,7 +61,11 @@ class MarathonAirplane(Assembly):
         driver.add_parameter('wing_weight.s', low=20, high=150)
         driver.add_parameter('wing_weight.AR', low=5, high=200)
         driver.add_objective('level.drag')
+<<<<<<< HEAD
         driver.add_constraint('level.alpha < 10')
+=======
+        driver.add_constraint('level.alpha < 12')
+>>>>>>> 2510ecb4877b558a2ffdc3dea2c0caa2e524f710
         solver = self.add('solver', NewtonSolver())
 
         #state variables
@@ -100,11 +104,18 @@ if __name__ == "__main__":
 
     #     print repr([ma.wing_weight.V_flight, ma.wing_weight.s, ma.wing_weight.M_tot, ma.fuse_weight.M_tot, ma.fuse_weight.M_pilots, ma.wing_weight.s, (ma.level.drag*ma.level.V*1.1), ma.level.drag*ma.level.V*1.1/(3*72)]), ","
 
-    ma.fuse_weight.N_pilot = 3
-    ma.fuse_weight.N_propellor = 3
-    ma.run()
+    for i in range(1,6):
+        ma.wing_weight.s = 50
+        ma.level.alpha = 9
+        ma.fuse_weight.N_pilot = i
+        ma.fuse_weight.N_propellor = 1
+        ma.run()
 
+<<<<<<< HEAD
     print repr([ma.wing_weight.s, ma.wing_weight.AR, ma.wing_weight.b, ma.wing_weight.M_tot, ma.fuse_weight.M_tot, ma.fuse_weight.M_pilots, ma.wing_weight.s, (ma.level.drag*ma.level.V*1.1), ma.level.drag*ma.level.V*1.1/(3*72)]), ","
+=======
+        print repr([ma.wing_weight.s, ma.wing_weight.AR, ma.wing_weight.b, ma.level.alpha, (ma.level.drag*ma.level.V*1.1)/ma.fuse_weight.N_pilot, ma.level.drag*ma.level.V*1.1/(ma.fuse_weight.N_pilot*72)]), ","
+>>>>>>> 2510ecb4877b558a2ffdc3dea2c0caa2e524f710
 
 
 
@@ -120,6 +131,6 @@ if __name__ == "__main__":
     print "level.drag:", ma.level.drag
     print "level.alpha:", ma.level.alpha
     print "turning.drag:", ma.turning.drag
-    print "power req per pilot:", (ma.level.drag*ma.level.V*1.1)/3.0
-    print "watts/kg:", ma.level.drag*ma.level.V*1.1/(3*72)
+    print "power req per pilot:", (ma.level.drag*ma.level.V*1.1)/ma.fuse_weight.N_pilot
+    print "watts/kg:", ma.level.drag*ma.level.V*1.1/(ma.fuse_weight.N_pilot*72)
     print "wing average chord:", ma.wing_weight.cbar

@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.integrate import quad
 
 from openmdao.main.api import Component
 
@@ -53,6 +54,27 @@ class WingWeight(Component):
         # two wire
         #self.M_s = (self.b*1.35e-1 + self.b**2*1.68e-3)*(1.0+(self.n_ult*self.GM_guess/100.0-2.0)/4.0)
 
+        w_pc = 70*9.81
+        w_ps = 70*9.81
+        l1 = 30
+        l2 = 30
+        p_wing = (w_pc/2 + w_ps)/(l1+l2)
+        rho = 2700
+        t = 0.7*0.14
+        sig_max = 1e12
+
+        def m1(y): 
+            return -p_wing/2. * y**2 + w_pc/2*y + c2
+
+        def m2(y): 
+            return p_wing*(y**2/2.0 + l2*y) + c3
+        
+        #0->l1
+        def wingmass1(y):
+            return 2*sig_max*t*rho/m1(y)
+        #0->l1    
+        def wingmass2(y):
+            return 2*sig_max*t*rho/m2(y)
         
         self.M_r = self.N_r*(self.cbar**2*self.t_cbar*5.50e-2+self.cbar*1.91e-3)
         self.M_er = self.N_er*(self.cbar**2*self.t_cbar*6.62e-1+self.cbar*6.57e-3)
@@ -103,5 +125,44 @@ class FuseWeight(WingWeight):
                      self.M_pilots + self.N_pod*self.M_pod  + self.N_propellor*self.M_propellor)
 
 
-        
+if __name__ == "__main__": 
+    import numpy as np
+    from matplotlib import pyplot as plt
+
+    w_pc = 70*9.81
+    w_ps = 70*9.81
+    l1 = 30
+    l2 = 30
+    p_wing = (w_pc/2 + w_ps)/(l1+l2)
+    rho = 2700
+    t = 0.7*0.14
+    sig_max = 1e12
+
+    c3 = -l2**2/2.0*p_wing
+    c2 = -l1/2.0 *(-p_wing*l1+w_pc)+c3
+
+    def m1(y): 
+        return -p_wing/2. * y**2 + w_pc/2*y + c2
+
+    def m2(y): 
+        return p_wing*(y**2/2.0 + l2*y) + c3
+	
+	def wingmass1(y):
+		return 2*sig_max*t*rho/m1(y)
+		
+	def wingmass2(y):
+		return 2*sig_max*t*rho/m2(y)
+	
+    Y = np.linspace(0,l1,50)
+    M = m1(Y)
+    plt.plot(Y,M)
+
+    Y = np.linspace(0,l2,50)
+    M = m2(Y)
+    plt.plot(l1+Y,M)
+
+    plt.show()
+    #y = 0 -> l1
+    #y = 0 -> l2
+
     
