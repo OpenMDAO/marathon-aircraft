@@ -84,7 +84,6 @@ if __name__ == "__main__":
     print "Wing Area: ", ma.wing_weight.s
     print "Wing AR: ", ma.wing_weight.AR
     print 
-    print "tip deflection", ma.wing_weight.tip_deflection
     print "tip slope", ma.wing_weight.tip_slope
     print "Gross Mass: ", (ma.wing_weight.M_tot + ma.fuse_weight.M_tot)
     print "Empty Mass: ", (ma.wing_weight.M_tot + ma.fuse_weight.M_tot) - (ma.fuse_weight.N_pilot*ma.fuse_weight.M_pilot)

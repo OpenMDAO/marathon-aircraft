@@ -63,7 +63,7 @@ class WingWeight(Component):
         #self.M_s = (self.b*1.35e-1 + self.b**2*1.68e-3)*(1.0+(self.n_ult*self.GM_guess/100.0-2.0)/4.0)
 		
         w_pc = self.M_pod*9.81
-        w_ps = 0*self.M_pod*9.81
+        w_ps = self.M_pod*9.81
         l1 = self.y_pod
         l2 = self.b /2 - l1
 
@@ -105,14 +105,14 @@ class WingWeight(Component):
                 sign = 1
             else:
                 sign = -1
-            return sign*2*sig_max/(E*t)
+            return sign*2*sig_max/(E*self.tbar)
     
         def curv2(y):
             if m2(y) < 0:
                 sign = 1
             else:
                 sign = -1
-            return sign*2*sig_max/(E*t)
+            return sign*2*sig_max/(E*self.tbar)
 
         self.M_s = 4*rho/(self.tbar*sig_max)*(quad(m1abs,0,l1)[0]+quad(m2abs,0,l2)[0])
         self.tip_slope = quad(curv1,0,l1)[0] + quad(curv2,0,l2)[0]
