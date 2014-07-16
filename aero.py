@@ -19,7 +19,7 @@ class Aero(Component):
     AR = Float(20, units="unitless", iotype="in", desc="aspect ratio")
     cbar = Float(.5, units="m", iotype="in", desc="wing average chord")
     e = Float(.97, units="unitless", iotype="in", desc="span efficiency factor")
-    V = Float(11.72 , units="m/s", iotype="in", desc="flight speed")
+    V = Float(11.72, units="m/s", iotype="in", desc="flight speed")
     R_0 = Float(float("inf"), units="m", iotype="in", desc="turning radius")
     rho = Float(1.1, iotype="in", units="kg/m**3", desc="density of air")
     nu = Float(1.460e-5, iotype="in", units="m**2/s", desc="kinematic viscosity of air")
