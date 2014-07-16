@@ -20,7 +20,8 @@ class IDFOpt(MarathonAirplane):
         #opt.add_parameter('wing_weight.y_pod', low=0, high=15) #spanwise location of the outboard pods
         opt.add_objective('level.drag')
         opt.add_constraint('level.Cl < 1.1')
-        opt.add_constraint('(wing_weight.tip_deflection - 10)/30 < 0')
+        #opt.add_constraint('(wing_weight.tip_deflection - 10)/30 < 0')
+        opt.add_constraint('wing_weight.tip_slope - 1.25 < 0')
         
 
         #IDF 
@@ -40,7 +41,7 @@ class MDFOpt(MarathonAirplane):
         opt = self.add('driver', SLSQPdriver())
         opt.add_parameter('wing_weight.cbar', low=.3, high=5)
         opt.add_parameter('wing_weight.b', low=5, high=100)
-        #opt.add_parameter('wing_weight.y_pod', low=0, high=15) #spanwise location of the outboard pods
+        opt.add_parameter('wing_weight.y_pod', low=0, high=15) #spanwise location of the outboard pods
         opt.add_objective('level.drag')
         opt.add_constraint('level.Cl < 1.1')
         opt.add_constraint('(wing_weight.tip_deflection - 10)/30 < 0')

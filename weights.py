@@ -20,6 +20,7 @@ class WingWeight(Component):
     
     M_pod = Float(72.4+8.164, iotype="in", desc="weight of each pilot pod", units="kg") 
     y_pod = Float(10, iotype="in", desc="weight of each pilot pod", units="m") 
+	fos   = Float(2.3, iotype="in", desc="Factor of safety of spar", units="unitless") 
 
     #outputs
     AR = Float(units="unitless", iotype="out", desc="aspect ratio")
@@ -61,32 +62,38 @@ class WingWeight(Component):
         #self.M_s = (self.b*3.10e-2 + self.b**2*7.56e-3)*(1.0+(self.n_ult*self.GM_guess/100.0-2.0)/4.0)
         # two wire
         #self.M_s = (self.b*1.35e-1 + self.b**2*1.68e-3)*(1.0+(self.n_ult*self.GM_guess/100.0-2.0)/4.0)
-
+		
         w_pc = self.M_pod*9.81
         w_ps = 0*self.M_pod*9.81
+        l1 = self.y_pod
+        l2 = self.b /2 - l1
 
-        l2 = self.b/2 - self.y_pod
-
-        p_wing = (w_pc/2 + w_ps)/(self.y_pod+l2)
+        p_wing = (w_pc/2 + w_ps)/(l1+l2)
         rho = 1580.6 #NCT301,HS40 carbon
-        sig_max = 1.0204e9/2.3 #NCT301,HS40 carbon with FOS of 2
+        sig_max = 1.0204e9/self.fos #NCT301,HS40 carbon with FOS applied (deadalus was ~2.3)
         E = 2.3028e11 #NCT301, HS40 carbon
 
+        # these are constants defined to make calcs easier
+        a1 = -p_wing
+        b1 = w_pc/2
+        a2 = -p_wing
+        b2 = w_ps
+        d2 = -a2*l2-b2
+        d1 = -a1*l1-b1+d2
+        e2 = -a2/2*l2**2-(b2+d2)*l2
+        e1 = -a1/2*l1**2-(b1+d1)*l1+e2
 
-        c3 = -l2**2/2.0*p_wing
-        c2 = -self.y_pod/2.0 *(-p_wing*self.y_pod+w_pc)+c3
+        #def m1(y):
+        #    return a1/2*y**2+(b1+d1)*y+e1
 
-        # def m1(y): 
-        #     return -p_wing/2. * y**2 + w_pc/2*y + c2
-
-        # def m2(y): 
-        #     return p_wing*(-y**2/2.0 + l2*y) + c3
-        
+        #def m2(y):
+        #    return a2/2*y**2+(b2+d2)*y+e2
+	
         def m1int(y):
-            return -p_wing/6. * y**3 + w_pc/4*y**2 + c2*y
-            
+            return a1/6*y**3+(b1+d1)/2*y**2+e1*y
+		
         def m2int(y):
-            return p_wing*(-y**3/6 + l2*y**2/2) + c3*y
+            return a2/6*y**3+(b2+d2)/2*y**2+e2*y
 
         self.M_s = 4*rho/(self.tbar*sig_max)*(np.abs(m1int(self.y_pod)-m1int(0))+np.abs(m2int(l2)-m2int(0)))
         self.tip_deflection = sig_max*(self.b/2)**2/(E*self.tbar)
@@ -148,6 +155,54 @@ class FuseWeight(WingWeight):
                      self.M_pilots + self.N_pod*self.M_pod  + self.N_propellor*self.M_propellor)
 
 
-    
+if __name__ == "__main__": 
+    import numpy as np
+    from matplotlib import pyplot as plt
 
+    w_pc = 70*9.81
+    w_ps = 70*9.81
+    fos = 2
+    l1 = 5
+    l2 = 55
+    p_wing = (w_pc/2 + w_ps)/(l1+l2)
+    rho = 1580.6 #NCT301,HS40 carbon
+    t = 0.7*0.14
+    sig_max = 1.0204e9/fos #NCT301,HS40 carbon with FOS applied
+
+    # these are constants defined to make calcs easier
+    a1 = -p_wing
+    b1 = w_pc/2
+    a2 = -p_wing
+    b2 = w_ps
+    d2 = -a2*l2-b2
+    d1 = -a1*l1-b1+d2
+    e2 = -a2/2*l2**2-(b2+d2)*l2
+    e1 = -a1/2*l1**2-(b1+d1)*l1+e2
+
+    def m1(y):
+        return a1/2*y**2+(b1+d1)*y+e1
+
+    def m2(y):
+        return a2/2*y**2+(b2+d2)*y+e2
+	
+    def m1int(y):
+        return a1/6*y**3+(b1+d1)/2*y**2+e1*y
+		
+    def m2int(y):
+        return a2/6*y**3+(b2+d2)/2*y**2+e2*y
+		
+	sparmass = 2*rho/(t*sig_max)*(m1int(l1)-m1int(0)+m2int(l2)-m2int(0))
+	repr(sparmass)
+		
+    Y = np.linspace(0,l1,50)
+    M = m1(Y)
+    plt.plot(Y,M)
+
+    Y = np.linspace(0,l2,50)
+    M = m2(Y)
+    plt.plot(l1+Y,M)
+
+    plt.show()
+    #y = 0 -> l1
+    #y = 0 -> l2
     
