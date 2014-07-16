@@ -20,7 +20,7 @@ class WingWeight(Component):
     
     M_pod = Float(72.4+8.164, iotype="in", desc="weight of each pilot pod", units="kg") 
     y_pod = Float(10, iotype="in", desc="weight of each pilot pod", units="m") 
-	fos   = Float(2.3, iotype="in", desc="Factor of safety of spar", units="unitless") 
+    fos   = Float(2.3, iotype="in", desc="Factor of safety of spar", units="unitless") 
 
     #outputs
     AR = Float(units="unitless", iotype="out", desc="aspect ratio")
@@ -40,8 +40,7 @@ class WingWeight(Component):
 
 
     M_tot = Float(iotype="out", desc="total combined wing weight", units="kg")
-    tip_deflection = Float(iotype="out", desc="deflection at the tip", units="m")
-    tip_slope = Float(iotype="out", desc="change in deflection w.r.t span at the tip", units="unitless")
+    tip_slope = Float(iotype="out", desc="change in deflection w.r.t span at the tip", units="radians")
 
     def execute(self): 
 
@@ -83,21 +82,40 @@ class WingWeight(Component):
         e2 = -a2/2*l2**2-(b2+d2)*l2
         e1 = -a1/2*l1**2-(b1+d1)*l1+e2
 
-        #def m1(y):
-        #    return a1/2*y**2+(b1+d1)*y+e1
+        def m1(y):
+        return a1/2*y**2+(b1+d1)*y+e1
 
-        #def m2(y):
-        #    return a2/2*y**2+(b2+d2)*y+e2
+        def m2(y):
+            return a2/2*y**2+(b2+d2)*y+e2
+        
+        def m1abs(y):
+            return np.abs(m1(y))
+
+        def m2abs(y):
+            return np.abs(m2(y))
 	
-        def m1int(y):
-            return a1/6*y**3+(b1+d1)/2*y**2+e1*y
+        #def m1int(y):
+        #    return a1/6*y**3+(b1+d1)/2*y**2+e1*y
 		
-        def m2int(y):
-            return a2/6*y**3+(b2+d2)/2*y**2+e2*y
+        #def m2int(y):
+        #    return a2/6*y**3+(b2+d2)/2*y**2+e2*y
+        
+        def curv1(y):
+            if m1(y) < 0:
+                sign = 1
+            else:
+                sign = -1
+            return sign*2*sig_max/(E*t)
+    
+        def curv2(y):
+            if m2(y) < 0:
+                sign = 1
+            else:
+                sign = -1
+            return sign*2*sig_max/(E*t)
 
-        self.M_s = 4*rho/(self.tbar*sig_max)*(np.abs(m1int(self.y_pod)-m1int(0))+np.abs(m2int(l2)-m2int(0)))
-        self.tip_deflection = sig_max*(self.b/2)**2/(E*self.tbar)
-        self.tip_slope = 2*sig_max*(self.b/2)/(E*self.tbar)
+        self.M_s = 4*rho/(self.tbar*sig_max)*(quad(m1abs,0,l1)[0]+quad(m2abs,0,l2)[0])
+        self.tip_slope = quad(curv1,0,l1)[0] + quad(curv2,0,l2)[0]
 
         # Deadalus estimates
         self.M_r = self.N_r*(self.cbar**2*self.t_cbar*5.50e-2+self.cbar*1.91e-3)
@@ -162,12 +180,13 @@ if __name__ == "__main__":
     w_pc = 70*9.81
     w_ps = 70*9.81
     fos = 2
-    l1 = 5
-    l2 = 55
+    l1 = 15
+    l2 = 5
     p_wing = (w_pc/2 + w_ps)/(l1+l2)
     rho = 1580.6 #NCT301,HS40 carbon
     t = 0.7*0.14
     sig_max = 1.0204e9/fos #NCT301,HS40 carbon with FOS applied
+    E = 2.3028e11 #NCT301, HS40 carbon
 
     # these are constants defined to make calcs easier
     a1 = -p_wing
@@ -185,14 +204,37 @@ if __name__ == "__main__":
     def m2(y):
         return a2/2*y**2+(b2+d2)*y+e2
 	
-    def m1int(y):
-        return a1/6*y**3+(b1+d1)/2*y**2+e1*y
+    #def m1int(y):
+    #    return a1/6*y**3+(b1+d1)/2*y**2+e1*y
 		
-    def m2int(y):
-        return a2/6*y**3+(b2+d2)/2*y**2+e2*y
-		
-	sparmass = 2*rho/(t*sig_max)*(m1int(l1)-m1int(0)+m2int(l2)-m2int(0))
-	repr(sparmass)
+    #def m2int(y):
+    #    return a2/6*y**3+(b2+d2)/2*y**2+e2*y
+        
+    def m1abs(y):
+            return np.abs(m1(y))
+
+    def m2abs(y):
+        return np.abs(m2(y))
+        
+    def curv1(y):
+        if m1(y) < 0:
+            sign = 1
+        else:
+            sign = -1
+        return sign*2*sig_max/(E*t)
+    
+    def curv2(y):
+        if m2(y) < 0:
+            sign = 1
+        else:
+            sign = -1
+        return sign*2*sig_max/(E*t)
+	
+    sparmass = 4*rho/(t*sig_max)*(quad(m1abs,0,l1)[0]+quad(m2abs,0,l2)[0])
+    print(sparmass)
+    
+    tip_slope = quad(curv1,0,l1)[0] + quad(curv2,0,l2)[0]
+    print(tip_slope*180/np.pi)
 		
     Y = np.linspace(0,l1,50)
     M = m1(Y)
@@ -203,6 +245,4 @@ if __name__ == "__main__":
     plt.plot(l1+Y,M)
 
     plt.show()
-    #y = 0 -> l1
-    #y = 0 -> l2
     
