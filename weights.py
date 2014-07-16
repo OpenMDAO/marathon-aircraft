@@ -49,17 +49,17 @@ class WingWeight(Component):
         # One wire
         #self.M_s = (self.b*3.10e-2 + self.b**2*7.56e-3)*(1.0+(self.n_ult*self.GM_guess/100.0-2.0)/4.0)
         # two wire
-        self.M_s = (self.b*1.35e-1 + self.b**2*1.68e-3)*(1.0+(self.n_ult*self.GM_guess/100.0-2.0)/4.0)
-        
+        #self.M_s = (self.b*1.35e-1 + self.b**2*1.68e-3)*(1.0+(self.n_ult*self.GM_guess/100.0-2.0)/4.0)
+       
         # Deadalus estimates
-		self.M_r = self.N_r*(self.cbar**2*self.t_cbar*5.50e-2+self.cbar*1.91e-3)
-        self.M_er = self.N_er*(self.cbar**2*self.t_cbar*6.62e-1+self.cbar*6.57e-3)
+	    #self.M_r = self.N_r*(self.cbar**2*self.t_cbar*5.50e-2+self.cbar*1.91e-3)
+        #self.M_er = self.N_er*(self.cbar**2*self.t_cbar*6.62e-1+self.cbar*6.57e-3)
         #self.M_le = 0.456*(self.s**2*self.delta**(4/3)/self.b)
         #self.M_te = self.b*2.77e-2
 		
 		# Muscular skin estimate with DAE11 airfoil
-        self.M_cover = self.s*2.061*0.212 # muscular skin estimate with DAE11 airfoil
-		self.M_shearweb = self.b*self.t*0.550
+        #self.M_cover = self.s*2.061*0.212 # muscular skin estimate with DAE11 airfoil
+	    #self.M_shearweb = self.b*self.t*0.550
 		
         
         self.M_tot = (self.M_s + self.M_r + self.M_er + self.M_cover + self.M_shearweb)
@@ -111,29 +111,38 @@ if __name__ == "__main__":
 
     w_pc = 70*9.81
     w_ps = 70*9.81
+    fos = 2
     l1 = 30
     l2 = 30
     p_wing = (w_pc/2 + w_ps)/(l1+l2)
     rho = 1580.6 #NCT301,HS40 carbon
     t = 0.7*0.14
-    sig_max = 1.0204e9/2 #NCT301,HS40 carbon with FOS of 2
+    sig_max = 1.0204e9/fos #NCT301,HS40 carbon with FOS applied
 
-    c3 = -l2**2/2.0*p_wing
-    c2 = -l1/2.0 *(-p_wing*l1+w_pc)+c3
+    # these are constants defined to make calcs easier
+    a1 = -p_wing
+    b1 = w_pc/2
+    a2 = -p_wing
+    b2 = w_ps
+    d2 = -a2*l2-b2
+    d1 = -a1*l1-b1+d2
+    e2 = -a2/2*l2**2-(b2+d2)*l2
+    e1 = -a1/2*l1**2-(b1+d1)*l1+e2
 
-    def m1(y): 
-        return -p_wing/2. * y**2 + w_pc/2*y + c2
+    def m1(y):
+        return a1/2*y**2+(b1+d1)*y+e1
 
-    def m2(y): 
-        return p_wing*(-y**2/2.0 + l2*y) + c3
+    def m2(y):
+        return a2/2*y**2+(b2+d2)*y+e2
 	
     def m1int(y):
-        return -p_wing/6. * y**3 + w_pc/4*y**2 + c2*y
+        return a1/6*y**3+(b1+d1)/2*y**2+e1*y
 		
-	def m2int(y):
-	    return p_wing*(-y**3/6 + l2*y**2/2) + c3*y
-
+    def m2int(y):
+        return a2/6*y**3+(b2+d2)/2*y**2+e2*y
+		
 	sparmass = 2*rho/(t*sig_max)*(m1int(l1)-m1int(0)+m2int(l2)-m2int(0))
+	repr(sparmass)
 		
     Y = np.linspace(0,l1,50)
     M = m1(Y)
