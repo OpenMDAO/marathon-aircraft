@@ -16,12 +16,12 @@ class IDFOpt(MarathonAirplane):
 
         opt = self.add('driver', SLSQPdriver())
         opt.add_parameter('wing_weight.cbar', low=.3, high=5)
-        opt.add_parameter('wing_weight.b', low=5, high=100)
-        #opt.add_parameter('wing_weight.y_pod', low=0, high=15) #spanwise location of the outboard pods
+        opt.add_parameter('wing_weight.b', low=5, high=100, start=40)
+        opt.add_parameter('wing_weight.fos', low=2.3, high=4)
+        opt.add_parameter('wing_weight.y_pod', low=0, high=15) #spanwise location of the outboard pods
         opt.add_objective('level.drag')
         opt.add_constraint('level.Cl < 1.1')
-        #opt.add_constraint('(wing_weight.tip_deflection - 10)/30 < 0')
-        opt.add_constraint('wing_weight.tip_slope - 1.25 < 0')
+        opt.add_constraint('wing_weight.tip_slope - .1 < 0')
         
 
         #IDF 
@@ -66,14 +66,14 @@ if __name__ == "__main__":
 
     ma = IDFOpt()
 
-    ma.fuse_weight.N_pilot = 3
+    ma.fuse_weight.N_pilot = 1
     ma.fuse_weight.N_propellor = 1
 
     #initial guesses
     ma.wing_weight.cbar = .5
     ma.level.alpha = 3
     ma.wing_weight.b = 30
-    ma.wing_weight.y_pod = 10
+    ma.wing_weight.y_pod = 4
 
     ma.run()
 

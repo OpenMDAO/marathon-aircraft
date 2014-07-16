@@ -2,7 +2,7 @@ import os
 from time import strftime
 import numpy as np 
 
-from openmdao.main.api import Assembly
+from openmdao.main.api import Assembly, Component
 from openmdao.lib.drivers.api import CaseIteratorDriver, SLSQPdriver, NewtonSolver
 from openmdao.lib.casehandlers.api import BSONCaseRecorder
 
@@ -10,6 +10,12 @@ from weights import WingWeight, FuseWeight
 from aero import Aero
 
 from marathon_airplane import MarathonAirplane
+
+# class InitGuessHack(Component): 
+
+#     def execute(self):
+
+##
 
 class SweepOpt(MarathonAirplane): 
     """Run across a set of parameters and re-optimize for each one""" 
@@ -21,10 +27,11 @@ class SweepOpt(MarathonAirplane):
         opt = self.add('opt', SLSQPdriver())
         opt.add_parameter('wing_weight.cbar', low=.3, high=5)
         opt.add_parameter('wing_weight.b', low=5, high=100)
-        #opt.add_parameter('wing_weight.y_pod', low=0, high=15) #spanwise location of the outboard pods
+        opt.add_parameter('wing_weight.fos', low=2.3, high=4)
+        opt.add_parameter('wing_weight.y_pod', low=0, high=15) #spanwise location of the outboard pods
         opt.add_objective('level.drag')
         opt.add_constraint('level.Cl < 1.1')
-        opt.add_constraint('(wing_weight.tip_deflection - 10)/30 < 0')
+        opt.add_constraint('wing_weight.tip_slope - .1 < 0')
         
         #IDF 
         #state variables

@@ -52,8 +52,8 @@ def get_ClCd_interpolant():
         Cl.extend(data[:,1])
 
 
-    Cl_interp = LinearNDInterpolator(points, Cl, fill_value=1.0, rescale=True)
-    Cd_interp = LinearNDInterpolator(points, Cd, fill_value=1.0, rescale=True)
+    Cl_interp = LinearNDInterpolator(points, Cl, fill_value=.1, rescale=True)
+    Cd_interp = LinearNDInterpolator(points, Cd, fill_value=.1, rescale=True)
 
     return Cl_interp, Cd_interp
 

@@ -20,7 +20,7 @@ class WingWeight(Component):
     
     M_pod = Float(72.4+8.164, iotype="in", desc="weight of each pilot pod", units="kg") 
     y_pod = Float(10, iotype="in", desc="weight of each pilot pod", units="m") 
-	fos   = Float(2.3, iotype="in", desc="Factor of safety of spar", units="unitless") 
+    fos   = Float(2.3, iotype="in", desc="Factor of safety of spar", units="unitless") 
 
     #outputs
     AR = Float(units="unitless", iotype="out", desc="aspect ratio")
@@ -62,7 +62,7 @@ class WingWeight(Component):
         #self.M_s = (self.b*3.10e-2 + self.b**2*7.56e-3)*(1.0+(self.n_ult*self.GM_guess/100.0-2.0)/4.0)
         # two wire
         #self.M_s = (self.b*1.35e-1 + self.b**2*1.68e-3)*(1.0+(self.n_ult*self.GM_guess/100.0-2.0)/4.0)
-		
+        
         w_pc = self.M_pod*9.81
         w_ps = 0*self.M_pod*9.81
         l1 = self.y_pod
@@ -88,10 +88,10 @@ class WingWeight(Component):
 
         #def m2(y):
         #    return a2/2*y**2+(b2+d2)*y+e2
-	
+    
         def m1int(y):
             return a1/6*y**3+(b1+d1)/2*y**2+e1*y
-		
+        
         def m2int(y):
             return a2/6*y**3+(b2+d2)/2*y**2+e2*y
 
@@ -184,16 +184,16 @@ if __name__ == "__main__":
 
     def m2(y):
         return a2/2*y**2+(b2+d2)*y+e2
-	
+    
     def m1int(y):
         return a1/6*y**3+(b1+d1)/2*y**2+e1*y
-		
+        
     def m2int(y):
         return a2/6*y**3+(b2+d2)/2*y**2+e2*y
-		
-	sparmass = 2*rho/(t*sig_max)*(m1int(l1)-m1int(0)+m2int(l2)-m2int(0))
-	repr(sparmass)
-		
+        
+    sparmass = 2*rho/(t*sig_max)*(m1int(l1)-m1int(0)+m2int(l2)-m2int(0))
+    repr(sparmass)
+        
     Y = np.linspace(0,l1,50)
     M = m1(Y)
     plt.plot(Y,M)
