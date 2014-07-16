@@ -127,6 +127,9 @@ class FuseWeight(WingWeight):
     
     def execute(self):
 
+        self.s = self.b*self.cbar
+        self.AR = self.b**2/self.s
+
         self.q = .5*self.rho*(self.V_flight+self.V_gust)
         self.b = (self.AR*self.s)**0.5
         self.cbar = self.s/self.b
