@@ -57,35 +57,62 @@ class MarathonAirplane(Assembly):
         self.connect('wing_weight.AR', ['level.AR', 'turning.AR'])
 
 
-        solver = self.add('solver', NewtonSolver())
+class IDFOpt(MarathonAirplane): 
 
-        #state variables
-        solver.add_parameter('level.alpha', low=0, high=5, start=3)
-        solver.add_parameter('turning.alpha', low=0, high=10, start=3)
+    def configure(self): 
 
-        #compatibility constraints
-        solver.add_constraint('(level.lift/9.81 - (wing_weight.M_tot + fuse_weight.M_tot))/2500 = 0 ')
-        solver.add_constraint('(turning.lift/9.81 - (turning.load_factor * (wing_weight.M_tot + fuse_weight.M_tot)))/1200 = 0')
-
-        #optimizer constraints
-        # solver.add_constraint('((wing_weight.GM_guess - wing_weight.M_tot - fuse_weight.M_tot)/100)**2 <  0.00001')
-        # solver.add_constraint('((level.lift/9.81 - (wing_weight.M_tot + fuse_weight.M_tot))/2500)**2 < .00001  ')
+        super(IDFOpt, self).configure()
 
         opt = self.add('driver', SLSQPdriver())
         opt.add_parameter('wing_weight.cbar', low=.3, high=5)
         opt.add_parameter('wing_weight.b', low=5, high=100)
+        #opt.add_parameter('wing_weight.y_pod', low=0, high=15) #spanwise location of the outboard pods
         opt.add_objective('level.drag')
         opt.add_constraint('level.Cl < 1.1')
         opt.add_constraint('(wing_weight.tip_deflection - 10)/30 < 0')
+        
+
+        #IDF 
+        #state variables
+        opt.add_parameter('level.alpha', low=0, high=5, start=3)
+        opt.add_parameter('turning.alpha', low=0, high=10, start=3)
+        #compatibility constraints
+        opt.add_constraint('(level.lift/9.81 - (wing_weight.M_tot + fuse_weight.M_tot))/2500 = 0 ')
+        opt.add_constraint('(turning.lift/9.81 - (turning.load_factor * (wing_weight.M_tot + fuse_weight.M_tot)))/1200 = 0')
+
+class MDFOpt(MarathonAirplane): 
+
+    def configure(self): 
+
+        super(IDFOpt, self).configure()
+
+        opt = self.add('driver', SLSQPdriver())
+        opt.add_parameter('wing_weight.cbar', low=.3, high=5)
+        opt.add_parameter('wing_weight.b', low=5, high=100)
+        #opt.add_parameter('wing_weight.y_pod', low=0, high=15) #spanwise location of the outboard pods
+        opt.add_objective('level.drag')
+        opt.add_constraint('level.Cl < 1.1')
+        opt.add_constraint('(wing_weight.tip_deflection - 10)/30 < 0')
+    
+       
+        #MDF 
+        solver = self.add('solver', NewtonSolver())
+        #state variables
+        solver.add_parameter('level.alpha', low=0, high=5, start=3)
+        solver.add_parameter('turning.alpha', low=0, high=10, start=3)
+        #compatibility constraints
+        solver.add_constraint('(level.lift/9.81 - (wing_weight.M_tot + fuse_weight.M_tot))/2500 = 0 ')
+        solver.add_constraint('(turning.lift/9.81 - (turning.load_factor * (wing_weight.M_tot + fuse_weight.M_tot)))/1200 = 0')
         opt.workflow.add('solver')
+       
 
         #data_path = os.path.join('dw_day1', 'data_%s.bson'%strftime('%Y-%m-%d_%H.%M.%S'))
-        data_path = os.path.join('dw_day1', 'ar_study.bson')
-        self.recorders = [BSONCaseRecorder(data_path), ]
+        #data_path = os.path.join('dw_day1', 'ar_study.bson')
+        #self.recorders = [BSONCaseRecorder(data_path), ]
 
 if __name__ == "__main__": 
 
-    ma = MarathonAirplane()
+    ma = IDFOpt()
 
     ma.fuse_weight.N_pilot = 3
     ma.fuse_weight.N_propellor = 1
@@ -94,13 +121,14 @@ if __name__ == "__main__":
     ma.wing_weight.cbar = .5
     ma.level.alpha = 3
     ma.wing_weight.b = 30
-
-
+    ma.wing_weight.y_pod = 10
 
     ma.run()
 
     print "Wing Span:", ma.wing_weight.b
     print "Wing Chord:", ma.wing_weight.cbar
+    print "Y_pod: ", ma.wing_weight.y_pod
+
     print "Wing Area: ", ma.wing_weight.s
     print "Wing AR: ", ma.wing_weight.AR
     print 

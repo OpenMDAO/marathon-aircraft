@@ -65,7 +65,7 @@ class WingWeight(Component):
         w_pc = self.M_pod*9.81
         w_ps = 0*self.M_pod*9.81
 
-        l2 = self.b /2 - self.y_pod
+        l2 = self.b/2 - self.y_pod
 
         p_wing = (w_pc/2 + w_ps)/(self.y_pod+l2)
         rho = 1580.6 #NCT301,HS40 carbon
