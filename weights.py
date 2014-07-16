@@ -40,7 +40,7 @@ class WingWeight(Component):
 
 
     M_tot = Float(iotype="out", desc="total combined wing weight", units="kg")
-    tip_slope = Float(iotype="out", desc="change in deflection w.r.t span at the tip", units="radians")
+    tip_slope = Float(iotype="out", desc="slope of the tip under level flight", units="rad")
 
     def execute(self): 
 
@@ -83,7 +83,7 @@ class WingWeight(Component):
         e1 = -a1/2*l1**2-(b1+d1)*l1+e2
 
         def m1(y):
-        return a1/2*y**2+(b1+d1)*y+e1
+            return a1/2*y**2+(b1+d1)*y+e1
 
         def m2(y):
             return a2/2*y**2+(b2+d2)*y+e2
