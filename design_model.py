@@ -20,7 +20,14 @@ class MarathonAirplane(Assembly):
         
 
         self.add('wing_weight', WingWeight())
+        
         self.add('fuse_weight', FuseWeight())
+        #tail settings
+        self.fuse_weight.b = 7
+        self.fuse_weight.cbar = .7
+
+        self.fuse_weight.N_pilot = 3
+        self.fuse_weight.N_propellor = 3
 
         self.add('level', Aero())
         self.level.Cd_a = 3*.015
@@ -49,13 +56,6 @@ class MarathonAirplane(Assembly):
         self.connect('wing_weight.s', ['level.s', 'turning.s'])
         self.connect('wing_weight.AR', ['level.AR', 'turning.AR'])
 
-        self.fuse_weight.b = 7
-        self.fuse_weight.cbar = .7
-
-        self.level.alpha = 1
-        self.turning.alpha = 3
-        self.fuse_weight.N_pilot = 3
-        self.fuse_weight.N_propellor = 3
 
         solver = self.add('solver', NewtonSolver())
 
@@ -87,13 +87,15 @@ if __name__ == "__main__":
 
     ma = MarathonAirplane()
 
-    
+    ma.fuse_weight.N_pilot = 3
+    ma.fuse_weight.N_propellor = 1
+
+    #initial guesses
     ma.wing_weight.cbar = .5
     ma.level.alpha = 3
     ma.wing_weight.b = 30
 
-    ma.fuse_weight.N_pilot = 3
-    ma.fuse_weight.N_propellor = 1
+
 
     ma.run()
 
