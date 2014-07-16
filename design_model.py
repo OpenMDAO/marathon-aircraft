@@ -4,7 +4,7 @@ import numpy as np
 
 from openmdao.main.api import Assembly, Component
 
-from openmdao.lib.drivers.api import COBYLAdriver, NewtonSolver
+from openmdao.lib.drivers.api import SLSQPdriver, NewtonSolver
 
 from openmdao.lib.casehandlers.api import BSONCaseRecorder
 
@@ -40,11 +40,15 @@ class MarathonAirplane(Assembly):
         self.connect('level.Cd_a', 'turning.Cd_a')
         self.connect('fuse_weight.rho', ['level.rho', 'turning.rho']) #air density 
         self.connect('fuse_weight.V_flight', ['wing_weight.V_flight','level.V', 'turning.V']) #flight speed
-        self.connect('fuse_weight.M_tot', 'wing_weight.M_pod')
 
         #design Variables: 
+        self.connect('wing_weight.cbar',['level.cbar','turning.cbar'])
+
+        #multidisciplinary connection
+        self.connect('fuse_weight.M_tot', 'wing_weight.M_pod')
         self.connect('wing_weight.s', ['level.s', 'turning.s'])
         self.connect('wing_weight.AR', ['level.AR', 'turning.AR'])
+
 
 
         self.wing_weight.s = 100
@@ -58,14 +62,9 @@ class MarathonAirplane(Assembly):
         self.fuse_weight.N_propellor = 3
 
 
-        driver = self.add('driver', COBYLAdriver())
-        driver.add_parameter('wing_weight.s', low=20, high=150)
-        driver.add_parameter('wing_weight.AR', low=5, high=50)
-        driver.add_objective('level.drag')
-        driver.add_constraint('level.Cl < 1.1')
-        solver = self.add('solver', NewtonSolver())
+ 
 
-        solver = self.add('driver', NewtonSolver())
+        solver = self.add('solver', NewtonSolver())
 
         #state variables
         #solver.add_parameter('wing_weight.GM_guess', low=50, high=100)
@@ -84,11 +83,17 @@ class MarathonAirplane(Assembly):
         # solver.add_constraint('((level.lift/9.81 - (wing_weight.M_tot + fuse_weight.M_tot))/2500)**2 < .00001  ')
         # solver.add_constraint('((turning.lift/9.81 - (turning.load_factor * (wing_weight.M_tot + fuse_weight.M_tot)))/1200) < 0.00001')
 
-        driver.workflow.add('solver')
-        #solver.workflow.add(['wing_weight','fuse_weight','level','turning'])
+        opt = self.add('driver', SLSQPdriver())
+        opt.add_parameter('wing_weight.cbar', low=.3, high=5)
+        opt.add_parameter('wing_weight.b', low=5, high=100)
+        opt.add_objective('level.drag')
+        opt.add_constraint('level.Cl < 1.1')
+        opt.add_constraint('(wing_weight.tip_deflection - 10)/30 < 0')
+        opt.workflow.add('solver')
+
 
         #data_path = os.path.join('dw_day1', 'data_%s.bson'%strftime('%Y-%m-%d_%H.%M.%S'))
-        data_path = os.path.join('dw_day1', 'pilot_study.bson')
+        data_path = os.path.join('dw_day1', 'ar_study.bson')
         self.recorders = [BSONCaseRecorder(data_path), ]
 
 if __name__ == "__main__": 
@@ -102,18 +107,22 @@ if __name__ == "__main__":
     #     ma.run()
 
     
-    ma.wing_weight.s = 32
-    ma.level.alpha = 9
+    ma.wing_weight.cbar = .5
+    ma.level.alpha = 3
+    ma.wing_weight.b = 30
 
-    ma.fuse_weight.N_pilot = 3
-    ma.fuse_weight.N_propellor = 3
+    ma.fuse_weight.N_pilot = 2
+    ma.fuse_weight.N_propellor = 1
+
     ma.run()
 
-    for ar in np.linspace(30,100,50): 
-        ma.wing_weight.AR = ar
+    # for s in np.linspace(12,40,10): 
+    #     #print ar 
+    #     ma.wing_weight.s = s
+    #     ma.run()
 
-
-    #print repr([ma.wing_weight.s, ma.wing_weight.AR, ma.wing_weight.b, ma.wing_weight.tbar, (ma.level.drag*ma.level.V*1.2)/ma.fuse_weight.N_pilot, ma.level.drag*ma.level.V*1.2/(ma.fuse_weight.N_pilot*72)]), ","
+    #     #print repr([ma.wing_weight.AR, ma.wing_weight.b, ma.wing_weight.tbar, ma.wing_weight.M_tot, ma.wing_weight.M_s+ma.wing_weight.M_shearweb, (ma.level.drag*ma.level.V*1.2)/ma.fuse_weight.N_pilot]), ","
+    #     print repr([ma.wing_weight.s, ma.wing_weight.b, ma.level.Cl , (ma.level.drag*ma.level.V*1.2)/ma.fuse_weight.N_pilot]), ","
 
 
 
@@ -125,10 +134,22 @@ if __name__ == "__main__":
     # print ma.wing_weight.s/(ma.wing_weight.M_tot + ma.fuse_weight.M_tot)
     # exit()
 
+    print "Wing Span:", ma.wing_weight.b
+    print "Wing Chord:", ma.wing_weight.cbar
+    print "Wing Area: ", ma.wing_weight.s
+    print "Wing AR: ", ma.wing_weight.AR
+    print 
+    print "tip deflection", ma.wing_weight.tip_deflection
+    print "tip slope", ma.wing_weight.tip_slope
     print "Gross Mass: ", (ma.wing_weight.M_tot + ma.fuse_weight.M_tot)
-    print "level.drag:", ma.level.drag
+    print "Empty Mass: ", (ma.wing_weight.M_tot + ma.fuse_weight.M_tot) - (ma.fuse_weight.N_pilot*ma.fuse_weight.M_pilot)
+    print "level.Cl:", ma.level.Cl
     print "level.alpha:", ma.level.alpha
-    print "turning.drag:", ma.turning.drag
-    print "power req per pilot:", (ma.level.drag*ma.level.V*1.1)/ma.fuse_weight.N_pilot
+    print "level.Re", ma.level.Re
+
+    print "tot power req per pilot:", (ma.level.drag*ma.level.V*1.1)/ma.fuse_weight.N_pilot
     print "watts/kg:", ma.level.drag*ma.level.V*1.1/(ma.fuse_weight.N_pilot*72)
-    print "wing average chord:", ma.wing_weight.cbar
+
+    print "level.drag:", ma.level.drag
+    print "turning.drag:", ma.turning.drag
+
