@@ -47,6 +47,7 @@ class MarathonAirplane(Assembly):
         self.connect('level.Cd_a', 'turning.Cd_a')
         self.connect('fuse_weight.rho', ['level.rho', 'turning.rho']) #air density 
         self.connect('fuse_weight.V_flight', ['wing_weight.V_flight','level.V', 'turning.V']) #flight speed
+        self.connect('fuse_weight.N_pilot', 'wing_weight.N_pilot') 
 
         #design Variables: 
         self.connect('wing_weight.cbar',['level.cbar','turning.cbar'])

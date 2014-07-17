@@ -11,10 +11,6 @@ from aero import Aero
 
 from marathon_airplane import MarathonAirplane
 
-class InitGuessHack(Component): 
-
-    def execute(self):
-        self.parent.wing_weight.b = 30
 
 class SweepOpt(MarathonAirplane): 
     """Run across a set of parameters and re-optimize for each one""" 
@@ -23,8 +19,6 @@ class SweepOpt(MarathonAirplane):
 
         super(SweepOpt, self).configure()
 
-        self.add('init', InitGuessHack())
-
         opt = self.add('opt', SLSQPdriver())
         opt.add_parameter('wing_weight.cbar', low=.3, high=5)
         opt.add_parameter('wing_weight.b', low=5, high=100)
@@ -32,7 +26,7 @@ class SweepOpt(MarathonAirplane):
         opt.add_parameter('wing_weight.y_pod', low=0, high=15) #spanwise location of the outboard pods
         opt.add_objective('level.drag')
         opt.add_constraint('level.Cl < 1.1')
-        #opt.add_constraint('wing_weight.tip_slope - .1 < 0')
+        opt.add_constraint('wing_weight.tip_slope - .1 < 0')
         
         #IDF 
         #state variables
@@ -43,7 +37,7 @@ class SweepOpt(MarathonAirplane):
         opt.add_constraint('(turning.lift/9.81 - (turning.load_factor * (wing_weight.M_tot + fuse_weight.M_tot)))/1200 = 0')
 
         sweep = self.add('driver', CaseIteratorDriver())
-        sweep.workflow.add(['init','opt'])
+        sweep.workflow.add('opt')
         sweep.add_parameter('fuse_weight.N_pilot')
 
 

@@ -5,7 +5,7 @@ from openmdao.lib.casehandlers.api import CaseDataset
 cds = CaseDataset('pilot_study.bson', 'bson')
 
 #ask for the variables you care about
-var_names = ['wing_weight.b', 'wing_weight.cbar', 'wing_weight.s', 'wing_weight.AR', 'wing_weight.tip_deflection', 
+var_names = ['wing_weight.b', 'wing_weight.cbar', 'wing_weight.s', 'wing_weight.AR', 
 'wing_weight.tip_slope', 'wing_weight.M_tot', 'fuse_weight.M_tot', 'fuse_weight.N_pilot', 'fuse_weight.M_pilot', 
 'level.Cl', 'level.alpha', 'level.Re', 'level.drag', 'turning.drag','fuse_weight.V_flight'
 ]
@@ -77,9 +77,9 @@ fig, ax = plt.subplots()
 ax.plot(N_pilot, data['wing_weight.tip_slope'], c='b', lw=5)
 ax.set_xticks([1,2,3,4])
 
-print data['wing_weight.b']
-print data['wing_weight.cbar']
-#plt.show()
+# print data['wing_weight.b']
+# print data['wing_weight.cbar']
+plt.show()
 
 
 

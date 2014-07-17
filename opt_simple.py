@@ -6,6 +6,9 @@ from openmdao.main.api import Assembly
 from openmdao.lib.drivers.api import SLSQPdriver, NewtonSolver
 from openmdao.lib.casehandlers.api import BSONCaseRecorder
 
+from pyopt_driver.pyopt_driver import pyOptDriver
+
+
 from marathon_airplane import MarathonAirplane
 
 class IDFOpt(MarathonAirplane): 
@@ -15,13 +18,23 @@ class IDFOpt(MarathonAirplane):
         super(IDFOpt, self).configure()
 
         opt = self.add('driver', SLSQPdriver())
+        # opt = self.add('driver', pyOptDriver())
+        # opt.optimizer = 'SNOPT'
+        # opt.options = {'Major feasibility tolerance': 1e-6,
+        #                        'Minor feasibility tolerance': 1e-6,
+        #                        'Major optimality tolerance': 1e-5,
+        #                        'Function precision': 1e-8,
+        #                        'Iterations limit': 500000000,
+        #                        }
+
         opt.add_parameter('wing_weight.cbar', low=.3, high=5)
         opt.add_parameter('wing_weight.b', low=5, high=100, start=40)
         opt.add_parameter('wing_weight.fos', low=2.3, high=4)
-        opt.add_parameter('wing_weight.y_pod', low=0, high=15) #spanwise location of the outboard pods
-        opt.add_objective('level.drag')
+        #opt.add_parameter('wing_weight.y_pod', low=0, high=15) #spanwise location of the outboard pods
+        opt.add_objective('level.drag/50.0')
         opt.add_constraint('level.Cl < 1.1')
-        opt.add_constraint('wing_weight.tip_slope - .1 < 0')
+        opt.add_constraint('10*(wing_weight.tip_slope - .2) < 0')
+        opt.add_constraint('wing_weight.tip_slope > 0')
         
 
         #IDF 
@@ -36,15 +49,25 @@ class MDFOpt(MarathonAirplane):
 
     def configure(self): 
 
-        super(IDFOpt, self).configure()
+        super(MDFOpt, self).configure()
 
         opt = self.add('driver', SLSQPdriver())
+        # opt = self.add('driver', pyOptDriver())
+        # opt.optimizer = 'SNOPT'
+        # opt.options = {'Major feasibility tolerance': 1e-6,
+        #                        'Minor feasibility tolerance': 1e-6,
+        #                        'Major optimality tolerance': 1e-5,
+        #                        'Function precision': 1e-8,
+        #                        'Iterations limit': 500000000,
+        #                        }
         opt.add_parameter('wing_weight.cbar', low=.3, high=5)
-        opt.add_parameter('wing_weight.b', low=5, high=100)
-        opt.add_parameter('wing_weight.y_pod', low=0, high=15) #spanwise location of the outboard pods
+        opt.add_parameter('wing_weight.b', low=5, high=100, start=40)
+        opt.add_parameter('wing_weight.fos', low=2.3, high=4)
+        #opt.add_parameter('wing_weight.y_pod', low=0, high=15) #spanwise location of the outboard pods
         opt.add_objective('level.drag')
         opt.add_constraint('level.Cl < 1.1')
-        opt.add_constraint('(wing_weight.tip_deflection - 10)/30 < 0')
+        opt.add_constraint('10*(wing_weight.tip_slope - .1) < 0')
+        opt.add_constraint('wing_weight.tip_slope > 0')
     
        
         #MDF 
@@ -65,15 +88,16 @@ class MDFOpt(MarathonAirplane):
 if __name__ == "__main__": 
 
     ma = IDFOpt()
+    #ma = MDFOpt()
 
-    ma.fuse_weight.N_pilot = 1
+    ma.fuse_weight.N_pilot = 2
     ma.fuse_weight.N_propellor = 1
 
     #initial guesses
     ma.wing_weight.cbar = .5
     ma.level.alpha = 3
-    ma.wing_weight.b = 30
-    ma.wing_weight.y_pod = 4
+    ma.wing_weight.b = 10
+    ma.wing_weight.y_pod = 10
 
     ma.run()
 

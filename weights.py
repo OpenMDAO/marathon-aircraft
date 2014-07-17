@@ -18,11 +18,13 @@ class WingWeight(Component):
     N_wing_sections = Int(iotype="in", desc="number of individual wing section")
     t_cbar = Float(.13, iotype="in", desc="average t/c")
     
+    N_pilot = Int(3, iotype="in", desc="number of pilots")
     M_pod = Float(72.4+8.164, iotype="in", desc="weight of each pilot pod", units="kg") 
-    y_pod = Float(10, iotype="in", desc="weight of each pilot pod", units="m") 
     fos   = Float(2.3, iotype="in", desc="Factor of safety of spar", units="unitless") 
 
     #outputs
+
+    y_pod = Float(10, iotype="out", desc="weight of each pilot pod", units="m") 
     AR = Float(units="unitless", iotype="out", desc="aspect ratio")
     s = Float(units="m**2", iotype="in", desc="wing area")
     tbar = Float(iotype="out", desc="average thickness", units="m")
@@ -62,10 +64,22 @@ class WingWeight(Component):
         # two wire
         #self.M_s = (self.b*1.35e-1 + self.b**2*1.68e-3)*(1.0+(self.n_ult*self.GM_guess/100.0-2.0)/4.0)
         
-        w_pc = self.M_pod*9.81
-        w_ps = self.M_pod*9.81
-        l1 = self.y_pod
-        l2 = self.b /2 - l1
+        if self.N_pilot == 1: 
+            w_pc = self.M_pod*9.81
+            #w_ps = 70*9.81
+            w_ps = 0
+            l1 = self.y_pod = self.b/2
+            l2 = 0
+        elif self.N_pilot == 2: 
+            w_pc = 0
+            w_ps = self.M_pod*9.81
+            l1 = self.y_pod = self.b/6
+            l2 = self.b/2 - l1
+        elif self.N_pilot == 3: 
+            w_pc = self.M_pod*9.81
+            w_ps = self.M_pod*9.81
+            l1 = self.y_pod = self.b/4
+            l2 = self.b /2 - l1
 
         p_wing = (w_pc/2 + w_ps)/(l1+l2)
         rho = 1580.6 #NCT301,HS40 carbon
@@ -172,8 +186,16 @@ if __name__ == "__main__":
     import numpy as np
     from matplotlib import pyplot as plt
 
-    w_pc = 70*9.81
-    w_ps = 70*9.81
+    if self.N_pilot == 1: 
+        w_pc = self.M_pilot*9.81
+        #w_ps = 70*9.81
+        w_ps = 0
+    elif self.N_pilot == 2: 
+        w_pc = 0
+        w_ps = self.M_pilot*9.81
+    elif self.N_pilot == 3: 
+        w_pc = self.M_pilot*9.81
+        w_ps = self.M_pilot*9.81
     fos = 2
     l1 = 15
     l2 = 5
